@@ -1,6 +1,6 @@
 # Module 1 – Open-Source EDA, OpenLane, and the RTL-to-GDSII Flow
 
-Week 3 moves from writing and verifying RTL to actually turning a design into silicon geometry. Module 1 is the conceptual groundwork before touching OpenLane hands-on — what an ASIC flow actually is, who provides the pieces (foundry, PDK, EDA tools), and the stages a design passes through from RTL to a GDSII file ready for fabrication.
+Week 3: from writing and verifying RTL to actually turning a design into silicon geometry. Module 1 is the conceptual groundwork before touching OpenLane hands-on — what an ASIC flow actually is, who provides the pieces (foundry, PDK, EDA tools), and the stages a design passes through from RTL to a GDSII file ready for fabrication.
 
 ---
 
