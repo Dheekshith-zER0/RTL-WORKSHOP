@@ -10,5 +10,5 @@ This repo tracks my week-by-week progress through the workshop — RTL design, s
 |---|---|
 | [Week 1](./Week_1) | RTL design/testbench basics, Icarus Verilog simulation, GTKWave, intro to Yosys synthesis, sync vs async reset |
 | [Week 2](./Week_2) | Combinational/sequential logic optimization, GLS, synthesis-simulation mismatch, blocking vs non-blocking, latch inference, generate/RCA |
-
+| [Week 3](./Week_3) | Open-source EDA & OpenLane, RTL-to-GDSII flow, PicoRV32, SkyWater SKY130 PDK |
 More weeks will be added here as the workshop progresses.
