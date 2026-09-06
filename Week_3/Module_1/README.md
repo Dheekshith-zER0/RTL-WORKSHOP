@@ -67,11 +67,7 @@ Did a bit of basic research alongside this into the wider **OpenLane/OpenROAD fa
 
 One key historical point worth noting: in **2020**, **SkyWater Technology**, with help from **Google**, made the **SKY130** process available as a fully **open-source PDK** — which is what makes it possible for something like this workshop to run an entire RTL-to-GDSII flow without needing access to a commercial/NDA'd process. **SKY130** refers to SkyWater's 130nm-class process node — mature and well-documented enough to be a good learning target, even though modern commercial chips use much smaller nodes. (Still need to look into what's changed in the open-source PDK/tooling landscape between 2020 and now — noting that as a gap to fill in later.)
 
-OpenLane can be run in two modes: **automatic** (runs the entire flow end-to-end without intervention) or **interactive** (step through the flow stage by stage, useful for debugging or learning what each step actually does):
-
-<p align="center">
-  <img src="images/envi_setup.png" width="750" alt="Terminal setting up and launching OpenLane interactively via Docker"/>
-</p>
+OpenLane can be run in two modes: **automatic** (runs the entire flow end-to-end without intervention) or **interactive** (step through the flow stage by stage, useful for debugging or learning what each step actually does) — the actual environment setup and first interactive launch are covered in Section 7 below.
 
 ---
 
@@ -90,9 +86,37 @@ A few pieces worth calling out from this diagram specifically:
 
 ---
 
-## 7. Tooling Setup
+## 7. Environment Setup
 
-OpenLane itself is distributed and run via **Docker**, pulled from its GitHub repo — so part of this module was just getting the environment itself set up and confirming the flow launches correctly before running any real design through it.
+OpenLane itself is distributed and run via **Docker**, pulled from its GitHub repo, so before touching any actual design the first task was just getting the container environment up and confirmed working:
+
+```bash
+# tag the pulled image for convenience
+docker tag efabless/openlane:v0.21 openlane:rc2
+
+# confirm the image is there
+docker images
+
+# launch the container, mounting the flow directory and the PDK
+docker run -it \
+  -v $(pwd):/openLANE_flow \
+  -v $PDK_ROOT:$PDK_ROOT \
+  -e PDK_ROOT=$PDK_ROOT \
+  -u $(id -u $USER):$(id -g $USER) \
+  openlane:rc2
+```
+
+Inside the container, confirmed the mount and directory structure, then dropped into OpenLane's interactive Tcl shell to make sure the flow actually launches before running a real design through it:
+
+```bash
+pwd        # /openLANE_flow
+ls -ltr    # scripts, run_designs.py, flow.tcl, docs, designs/, configuration/, Makefile, etc.
+./flow.tcl -interactive
+```
+
+<p align="center">
+  <img src="images/envi_setup.png" width="750" alt="Terminal showing Docker setup and launching OpenLane's interactive Tcl flow"/>
+</p>
 
 | Design Stage | Tool | Main Function |
 |---|---|---|
@@ -101,8 +125,10 @@ OpenLane itself is distributed and run via **Docker**, pulled from its GitHub re
 | Static Timing Analysis | OpenSTA | Timing checks (WNS/TNS, setup/hold) |
 | Physical Design | OpenROAD | Floorplanning, placement, CTS, routing |
 | Detailed Routing | TritonRoute | Final wire/via routing |
+| RC Extraction | OpenRCX | Parasitic extraction |
 | DRC | Magic | Design-rule checking |
 | LVS | Netgen | Layout-vs-netlist checking |
+| Layout Viewing | KLayout / Magic | Visual inspection |
 | Final Output | — | GDSII |
 
 ---
@@ -113,3 +139,5 @@ OpenLane itself is distributed and run via **Docker**, pulled from its GitHub re
 RTL (PicoRV32) → Synthesis (Yosys+ABC) → Floorplan/Power Plan → Placement
     → CTS → Routing → RC Extraction → Post-Route STA → DRC/LVS → GDSII
 ```
+
+Module 1 was mostly about building the mental map before running anything for real — knowing what a foundry actually provides, what a PDK is standing in for, and why the RTL-to-GDSII flow needs to be this many distinct stages rather than one black-box step. Modules 2 and 3 of this week move into actually running PicoRV32 through OpenLane stage by stage.
