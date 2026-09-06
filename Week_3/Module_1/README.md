@@ -12,7 +12,7 @@ Started by looking at a QFN-48 package and what actually sits inside/around a ch
   <img src="images/soc.png" width="750" alt="Processor/SoC block diagram with I2C, QSPI, UART, GPIO, PWM, JTAG and SDRAM interfaces"/>
 </p>
 
-RISC-V specifically was introduced as the example architecture we'd carry through the flow — i.e. going from an HDL description of a RISC-V core all the way to a physical layout. The specific core used for this is **PicoRV32**, a small, size-optimized RISC-V (RV32) processor core — it's a good fit for a first ASIC flow run since it's a real, practical design (instruction decoding, registers, ALU, control logic, memory interface) rather than a toy example like a counter or mux, without being so large that the flow takes forever to run.
+RISC-V specifically was introduced as the example architecture we'd carry through the flow — i.e. going from an HDL description of a RISC-V core all the way to a physical layout. The specific core used for this is **PicoRV32a**, a small, size-optimized RISC-V (RV32) processor core — it's a good fit for a first ASIC flow run since it's a real, practical design (instruction decoding, registers, ALU, control logic, memory interface) rather than a toy example like a counter or mux, without being so large that the flow takes forever to run.
 
 Also connected how a software application actually reaches hardware: it goes through **system software**, which has three parts — the **OS**, the **compiler**, and the **assembler**. The compiler's output is a set of **instructions**, and that's the main thing Module 1 is really about: everything downstream (RTL, synthesis, layout) exists to eventually execute instructions on real hardware.
 
@@ -136,8 +136,8 @@ ls -ltr    # scripts, run_designs.py, flow.tcl, docs, designs/, configuration/, 
 ## 8. Recap
 
 ```text
-RTL (PicoRV32) → Synthesis (Yosys+ABC) → Floorplan/Power Plan → Placement
+RTL (PicoRV32a) → Synthesis (Yosys+ABC) → Floorplan/Power Plan → Placement
     → CTS → Routing → RC Extraction → Post-Route STA → DRC/LVS → GDSII
 ```
 
-Module 1 was mostly about building the mental map before running anything for real — knowing what a foundry actually provides, what a PDK is standing in for, and why the RTL-to-GDSII flow needs to be this many distinct stages rather than one black-box step. Modules 2 and 3 of this week move into actually running PicoRV32 through OpenLane stage by stage.
+Module 1 was mostly about building the mental map before running anything for real — knowing what a foundry actually provides, what a PDK is standing in for, and why the RTL-to-GDSII flow needs to be this many distinct stages rather than one black-box step. Modules 2 and 3 of this week move into actually running PicoRV32a through OpenLane stage by stage.
