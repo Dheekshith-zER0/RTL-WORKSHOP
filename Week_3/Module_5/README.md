@@ -30,7 +30,7 @@ The power distribution network (PDN) supplies stable power and ground to the des
 
 The PDN must provide connectivity while respecting width, spacing and routing-resource constraints.
 
-<img src="https://raw.githubusercontent.com/afraajabeen-creator/RTL_Design_Workshop/main/PD_MODULE_5/images/maze%20routing.png" width="700" alt="Maze routing"/>
+<img src="images/M5_IMG_01_POWER_PLANNING.png" width="700" alt="Power planning and power distribution"/>
 
 ## 4. Global vs Detailed Routing
 
@@ -48,13 +48,13 @@ TritonRoute is a detailed-routing engine used in the OpenROAD flow. It works wit
 
 Route guides constrain where a net should be routed. They provide the detailed router with regions and layer information derived from the global-routing solution.
 
-<img src="https://raw.githubusercontent.com/Sangathram/RTL_Workshop/main/Physical_Design_PD/Module%205/Images/Route_Guide.png" width="700" alt="Route guide"/>
+<img src="images/M5_IMG_02_ROUTE_GUIDES.png" width="700" alt="Preprocessed route guides"/>
 
 ## 7. Inter-Guide Connectivity
 
 A net can span multiple guide regions. The detailed router must maintain electrical connectivity as the route moves between these regions.
 
-<img src="https://raw.githubusercontent.com/afraajabeen-creator/RTL_Design_Workshop/main/PD_MODULE_5/images/Routing_topology.png" width="700" alt="Routing topology"/>
+<img src="images/M5_IMG_03_INTER_GUIDE_CONNECTIVITY.png" width="700" alt="Inter-guide connectivity"/>
 
 ## 8. Intra-Layer and Inter-Layer Routing
 
@@ -66,7 +66,7 @@ Layer changes are useful for escaping congestion and connecting different routin
 
 Different routing topologies influence wirelength, congestion, timing and manufacturability. Routing algorithms therefore consider more than geometric distance when selecting paths.
 
-<img src="https://raw.githubusercontent.com/Sangathram/RTL_Workshop/main/Physical_Design_PD/Module%205/Images/Routing.png" width="700" alt="Routing"/>
+<img src="images/M5_IMG_04_ROUTING_TOPOLOGY.png" width="700" alt="Routing topology algorithm"/>
 
 ## 10. Design Rule Checking
 
@@ -109,12 +109,6 @@ Post-route STA therefore provides a more physically representative timing pictur
 8. Extract parasitics.
 9. Run post-route STA.
 10. Iterate until timing and physical constraints are satisfied.
-
-![Power planning](https://raw.githubusercontent.com/Sohail123-spec/RTL_Design_Workshop/main/Physical_Design/Module%205/Images/power_planning.png)
-
-![Route guides](https://raw.githubusercontent.com/Sohail123-spec/RTL_Design_Workshop/main/Physical_Design/Module%205/Images/Preprocessed_route_guides.png)
-
-![Inter-guide connectivity](https://raw.githubusercontent.com/Sohail123-spec/RTL_Design_Workshop/main/Physical_Design/Module%205/Images/inter_guide_conectivity.png)
 
 ## Key Takeaways
 

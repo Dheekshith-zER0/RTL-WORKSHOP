@@ -28,7 +28,7 @@ The inverter can be characterized using a SPICE netlist and the Sky130 device mo
 - transient response
 - input/output loading effects
 
-<img src="https://raw.githubusercontent.com/afraajabeen-creator/RTL_Design_Workshop/main/PD_MODULE_3/images/16_transient_analysis.png" width="700" alt="SPICE transient analysis"/>
+<img src="images/M3_IMG_01_SPICE_WAVEFORMS.png" width="700" alt="SPICE waveform characterization"/>
 
 ## 3. CMOS Fabrication Sequence
 
@@ -43,19 +43,19 @@ Physical CMOS implementation is built through a sequence of semiconductor-proces
 7. metal interconnect layers
 8. passivation
 
-<img src="https://raw.githubusercontent.com/Sangathram/RTL_Workshop/main/Physical_Design_PD/Module%203/Images/CMOS_inverter_Threshold.png" width="700" alt="CMOS inverter threshold"/>
+<img src="images/M3_IMG_02_GATE_FORMATION.png" width="700" alt="CMOS gate formation"/>
 
 ## 4. Source, Drain, Contacts and Interconnect
 
 After transistor formation, contacts connect diffusion and polysilicon regions to the metal stack. Interconnect layers then provide the routing required to connect devices into standard cells and larger digital blocks.
 
-<img src="https://raw.githubusercontent.com/Sohail123-spec/RTL_Design_Workshop/main/Physical_Design/Module%203/Images/7)Contacts%26Interconnects.png" width="700" alt="Contacts and interconnects"/>
+<img src="images/M3_IMG_03_CONTACTS_INTERCONNECT.png" width="700" alt="Contacts and interconnect layers"/>
 
 ## 5. Sky130 Standard-Cell Layout
 
 A layout represents the electrical circuit as manufacturable geometry. In a standard cell, transistor regions, wells, contacts, polysilicon and metal tracks must obey the technology rules while maintaining compatible cell height and routing interfaces.
 
-<img src="https://raw.githubusercontent.com/afraajabeen-creator/RTL_Design_Workshop/main/PD_MODULE_3/images/01_custom_sky130_cmos_inverter_layout.png" width="700" alt="Sky130 CMOS inverter layout"/>
+<img src="images/M3_IMG_04_CMOS_LAYOUT.png" width="700" alt="CMOS standard-cell layout"/>
 
 ## 6. Magic Layout Inspection
 
@@ -90,10 +90,6 @@ Technology files describe the layer definitions and rules understood by the layo
 6. Extract the layout.
 7. Simulate the extracted circuit.
 8. Compare extracted behaviour with the original circuit.
-
-![SPICE values](https://raw.githubusercontent.com/Sangathram/RTL_Workshop/main/Physical_Design_PD/Module%203/Images/Spice_values.png)
-
-![SPICE waveform](https://raw.githubusercontent.com/Sohail123-spec/RTL_Design_Workshop/main/Physical_Design/Module%203/Images/Spice_waveforms.png)
 
 ## Key Takeaways
 
