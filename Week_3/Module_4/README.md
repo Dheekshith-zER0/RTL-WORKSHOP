@@ -56,7 +56,7 @@ A representative clock constraint is conceptually:
 
 `create_clock -period T -name clk [get_ports clk]`
 
-<img src="images/M4_IMG_01_CREATE_CLOCK.png" width="700" alt="SDC clock creation"/>
+<img src="https://raw.githubusercontent.com/afraajabeen-creator/RTL_Design_Workshop/main/PD_MODULE_4/images/delay%20tables.png" width="700" alt="Liberty delay tables"/>
 
 ## 5. Pre-Layout STA Using OpenSTA
 
@@ -69,7 +69,7 @@ OpenSTA can analyse the design before detailed physical implementation. A typica
 
 The reports identify critical paths, arrival times, required times and slack.
 
-<img src="images/M4_IMG_02_OPENSTA_PRELAYOUT.png" width="700" alt="OpenSTA pre-layout timing analysis"/>
+<img src="https://raw.githubusercontent.com/Sangathram/RTL_Workshop/main/Physical_Design_PD/Module%204/Images/OpenSTA_Prelayout_Timing_Analysis.png" width="700" alt="OpenSTA pre-layout timing analysis"/>
 
 ## 6. Setup and Hold
 
@@ -87,7 +87,7 @@ Slack is the difference between the required and actual arrival times.
 
 The clock seen by different sequential elements is affected by variation and implementation effects. Clock uncertainty is used to reserve timing margin for effects such as jitter and modelling uncertainty.
 
-<img src="images/M4_IMG_03_JITTER_VARIATION.png" width="700" alt="Clock jitter and variation"/>
+<img src="https://raw.githubusercontent.com/afraajabeen-creator/RTL_Design_Workshop/main/PD_MODULE_4/images/setup%20timing%20analysis(with%20ideal%20clock).png" width="700" alt="Setup timing analysis"/>
 
 ## 8. Clock Tree Synthesis
 
@@ -110,7 +110,7 @@ An H-tree is a balanced clock-distribution topology that can provide geometrical
 
 A CTS script configures the clock-tree construction process, including clock buffers and implementation parameters.
 
-<img src="images/M4_IMG_04_CTS_SCRIPT.png" width="700" alt="Clock tree synthesis script"/>
+<img src="https://raw.githubusercontent.com/Sangathram/RTL_Workshop/main/Physical_Design_PD/Module%204/Images/Create_clock.png" width="700" alt="Clock creation"/>
 
 ## 11. Ideal Clock vs Real Clock
 
@@ -133,6 +133,8 @@ CTS can change both setup and hold timing because clock arrival times are no lon
 7. Analyse skew and insertion delay.
 8. Re-run timing with the implemented clock network.
 9. Optimize remaining timing violations.
+
+![Clock jitter](https://raw.githubusercontent.com/Sohail123-spec/RTL_Design_Workshop/main/Physical_Design/Module%204/Images/Jitter_Variation.png)
 
 ## Key Takeaways
 
