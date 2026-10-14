@@ -240,6 +240,20 @@ The 16 corners come from the separate SKY130 standard-cell library repository (`
 
 Values are rounded to two decimals from the recorded output. Hold TNS is 0.0 ns at all 16 corners.
 
+### WNS and TNS by Liberty Corner
+
+These charts plot the **16 unique standard-cell Liberty corners** on the x-axis. The y-axis shows worst setup slack (WNS) in nanoseconds in the first chart and setup total negative slack (TNS) in nanoseconds in the second. Negative values indicate setup-timing violations; zero TNS means no accumulated negative setup slack was reported for that corner.
+
+<p align="center">
+  <img src="images/sta_wns_by_corner.svg" width="100%" alt="Bar chart of worst setup slack by SKY130HD Liberty corner"/>
+</p>
+
+<p align="center">
+  <img src="images/sta_tns_by_corner.svg" width="100%" alt="Bar chart of setup total negative slack by SKY130HD Liberty corner"/>
+</p>
+
+
+
 ---
 
 ## 6. Results and Observations
