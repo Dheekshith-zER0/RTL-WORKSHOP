@@ -1,259 +1,223 @@
-# Week 4 — VSDBABYSOC: RTL-to-Physical-Design Flow and Multi-Corner STA
+# Week 4 – VSDBABYSOC: RTL-to-Layout Flow and Multi-Corner STA
 
-## Contents
+Weeks 1–3 covered RTL, synthesis, GLS and the concepts behind physical design. Week 4 puts those concepts to work: running the OpenROAD-flow-scripts (ORFS) flow in a GitHub Codespace, going through each implementation stage, and then doing post-route static timing analysis (STA) on VSDBABYSOC across 16 SKY130HD library corners. As before, this is a run-through of what I actually did in the lab and what I understood from it.
 
-1. [Objective](#1-objective)
-2. [Evidence map: what each screenshot shows](#2-evidence-map-what-each-screenshot-shows)
-3. [Environment and tool setup](#3-environment-and-tool-setup)
-4. [Synthesis](#4-synthesis)
-5. [Physical implementation, stage by stage](#5-physical-implementation-stage-by-stage)
-6. [Parasitic extraction](#6-parasitic-extraction)
-7. [Post-route STA on VSDBABYSOC](#7-post-route-sta-on-vsdbabysoc)
-8. [Results and observations](#8-results-and-observations)
-9. [Technical learnings](#9-technical-learnings)
-10. [Problems faced and how we addressed them](#10-problems-faced-and-how-we-addressed-them)
-11. [Supporting documents](#11-supporting-documents)
-12. [Conclusion](#12-conclusion)
+The flow, end to end:
+
+`Synthesis → Floorplan → Placement → CTS → Global route → Detailed route → Fill → Final database`
+
+followed by `Fresh SPEF extraction → Post-route STA (16 corners)`.
+
+Two designs appear in this week's screenshots:
+
+- **`gcd` on `nangate45`** – the reference design bundled with ORFS, used for the stage-by-stage walkthrough (Sections 2–3).
+- **`vsdbabysoc` on `sky130hd`** – the design used for the post-route timing analysis (Sections 4–5).
 
 ---
 
-## 1. Objective
+## 1. Environment Setup
 
-This week covers the practical RTL-to-layout flow in OpenROAD-flow-scripts (ORFS), run in a browser-based GitHub Codespace, followed by post-route static timing analysis (STA) of the VSDBABYSOC design on SKY130HD.
+The flow was run in a **GitHub Codespace** (`vsd-pd2`) that launches a ready-to-use OpenROAD environment with an XFCE desktop and browser-based noVNC access, so no local installation is needed. Every command was run from `~/Desktop/OpenROAD-flow-scripts/flow`, where `make` drives each stage.
 
-The work moves through these checkpoints:
+<p align="center">
+  <img src="images/01_codespace_setup.png" width="700" alt="VSD-PD Codespace environment"/>
+</p>
 
-```
-Synthesis → Floorplan → Placement → CTS → Global route → Detailed route → Fill → Final database
-                                                                  │
-                                                  Fresh SPEF extraction → Post-route STA (16 corners)
-```
+<p align="center">
+  <img src="images/02_terminal_environment.png" width="700" alt="Terminal in the Codespace workspace"/>
+</p>
 
-Results and learnings come first; problems and resolutions come after them (section 10).
+The first thing to check is the tool version, since slack, wire length and DRC counts can change between OpenROAD builds. `openroad -version` reports **v2.0-25794-g7cbd77e748**, and `git log --oneline` shows the ORFS commit.
 
-## 2. Evidence map: what each screenshot shows
+<p align="center">
+  <img src="images/03_tool_versions.png" width="700" alt="OpenROAD version and ORFS commit"/>
+</p>
 
-The screenshots come from two different runs, and I want that to be clear before the numbers.
+---
 
-| Figures | Design / platform | What they cover |
-|---|---|---|
-| 1–14 | `gcd` on `nangate45` (the reference design bundled with ORFS) | Environment setup and the full stage-by-stage flow: synthesis, floorplan, placement, CTS, routing, fill, database checkpoints |
-| 15–19 | `vsdbabysoc` on `sky130hd` | Routed layout in the OpenROAD GUI, setup/hold slack histograms, and the 16-corner STA script and summary |
+## 2. Synthesis
 
-Every number quoted next to a figure below is read from that figure. Numbers that come from the written post-route STA report are labelled as such. Values that are not legible in a screenshot are not inferred.
+Synthesis converts the RTL into a gate-level netlist using the standard-cell library. The statistics report (`reports/nangate45/gcd/base/synth_stat.txt`) gives the cell counts and area:
 
-## 3. Environment and tool setup
+- **Chip area** of `\gcd`: **659.946**
+- **Sequential area:** 158.27 (**23.98 %**), all from 35 × `DFF_X1`
+- **Biggest combinational groups:** 164 × `NAND2_X1`, 86 × `INV_X1`, 60 × `OAI21_X1`
 
-The flow was run in GitHub Codespaces from the `vsd-pd2` repository, which launches a ready-to-use OpenROAD environment with an XFCE desktop and browser-based noVNC access. All commands were run from `~/Desktop/OpenROAD-flow-scripts/flow`.
+The count and area columns appear twice in the report (before and after mapping) and match, so mapping added no extra cells.
 
-**Figure 1 — Codespace environment**
+<p align="center">
+  <img src="images/04_synthesis_statistics.png" width="700" alt="Synthesis statistics for gcd"/>
+</p>
 
-![Codespace setup](./images/01_codespace_setup.png)
+---
 
-The VSD-PD Codespace README (OpenROAD + noVNC cloud environment) open in the browser-based VS Code, with the OpenROAD GUI available through noVNC.
+## 3. Physical Implementation, Stage by Stage
 
-**Figure 2 — Terminal and working directory**
+Each stage writes a numbered `.odb` database and a log, so the design can be inspected after any step. Every stage ends with `report_design_area`, which gives the area and utilization below.
 
-![Terminal environment](./images/02_terminal_environment.png)
+| Stage | Design area (µm²) | Utilization |
+|---|---:|---:|
+| Floorplan | 708 | 61 % |
+| Detailed placement | 850 | 74 % |
+| After CTS | 997 | 86 % |
+| Global route | 1034 | 90 % |
+| Detailed route | 1034 | 90 % |
+| Fill-cell insertion | 1034 | 90 % |
 
-A fresh terminal in `/workspaces/vsd-pd2`. From here the working directory is changed to the ORFS `flow` directory, where `make` drives every stage.
+Area grows from stage to stage because each step adds cells: tap cells, timing-repair buffers and clock buffers. The design itself does not change.
 
-**Figure 3 — Tool version check**
+### Floorplanning
 
-![Tool versions](./images/03_tool_versions.png)
+The floorplan defines the die and core area, places macros and tap cells, and builds the power distribution network. The log lists the sub-stages (`2_1_floorplan`, `2_2_floorplan_macro`, `2_3_floorplan_tapcell`, `2_4_floorplan_pdn`). The per-layer via-resistance table printed above the final area is the RC setup that later parasitic estimates use.
 
-`openroad -version` reports **v2.0-25794-g7cbd77e748**, and `git log --oneline` shows the ORFS checkout commit. Recording the version matters because slack, wire length, and DRC counts can all change between OpenROAD builds.
+<p align="center">
+  <img src="images/05_floorplan.png" width="700" alt="Floorplan log"/>
+</p>
 
-## 4. Synthesis
+### Placement
 
-**Figure 4 — Synthesis statistics**
+Placement positions the standard cells and then legalizes them onto the site grid. The detailed-placement log reports:
 
-![Synthesis statistics](./images/04_synthesis_statistics.png)
+- zero cells in no-regions, zero row/site alignment problems, **zero overlaps**
+- half-perimeter wirelength (HPWL) improved from **3590.3 µm to 3162.7 µm (−11.9 %)**
+- 47 instances mirrored by `optimize_mirroring`
 
-`cat reports/nangate45/gcd/base/synth_stat.txt` for the `gcd` design:
+<p align="center">
+  <img src="images/06_placement.png" width="700" alt="Detailed placement log"/>
+</p>
 
-- Chip area for module `\gcd`: **659.946** (library area units)
-- Area used by sequential elements: **158.27 (23.98 %)**
-- 35 × `DFF_X1` account for all of the sequential area
-- The largest combinational groups are 164 × `NAND2_X1`, 86 × `INV_X1`, and 60 × `OAI21_X1`
+### Clock-Tree Synthesis (CTS)
 
-Reading the report: the cell-count column and the area column both appear twice (before and after cell mapping); for this report the two sets match, so no extra cells were added by the final mapping step.
-
-## 5. Physical implementation, stage by stage
-
-Each stage writes a numbered `.odb` checkpoint and a log, so the design can be inspected after any step. The area and utilization figures below come directly from each stage's `report_design_area` output.
-
-| Stage | Design area (µm²) | Utilization | Source figure |
-|---|---:|---:|---|
-| Floorplan | 708 | 61 % | Figure 5 |
-| Detailed placement | 850 | 74 % | Figure 6 |
-| After CTS | 997 | 86 % | Figure 7 |
-| Global route | 1034 | 90 % | Figure 8 |
-| Detailed route | 1034 | 90 % | Figure 9 |
-| Fill-cell insertion | 1034 | 90 % | Figure 11 |
-
-Area grows between stages because each step adds cells or buffers (tap cells, timing-repair buffers, clock buffers), not because the design itself changes.
-
-### 5.1 Floorplanning
-
-**Figure 5 — Floorplan**
-
-![Floorplan](./images/05_floorplan.png)
-
-The floorplan log lists the stage outputs (`2_1_floorplan`, `2_2_floorplan_macro`, `2_3_floorplan_tapcell`, `2_4_floorplan_pdn`) and ends with `report_design_area`: **708 µm² at 61 % utilization**. The per-layer via-resistance table printed above it is the RC setup that later parasitic estimates rely on.
-
-### 5.2 Placement
-
-**Figure 6 — Detailed placement**
-
-![Placement](./images/06_placement.png)
-
-The detailed-placement log reports:
-
-- Zero cells in no-regions, zero row-alignment problems, zero site-alignment problems, **zero overlaps** between adjacent cells
-- Half-perimeter wirelength (HPWL) improved from **3590.3 µm to 3162.7 µm (−11.9 %)** during detailed-placement optimization
-- `optimize_mirroring` mirrored 47 instances
-- Resulting design area **850 µm², 74 % utilization**
-
-### 5.3 Clock-tree synthesis (CTS)
-
-**Figure 7 — Clock-tree synthesis and timing repair**
-
-![Clock tree synthesis](./images/07_clock_tree_synthesis.png)
-
-After CTS the log shows repair-timing activity:
+CTS builds the clock distribution network so the clock reaches all flip-flops with balanced latency and low skew. After CTS the log shows timing repair at work:
 
 - **19 buffers inserted**, 167 instances resized, 34 pins swapped, 1 instance cloned
-- A warning that not all setup violations could be repaired (`RSZ-2…`, "Unable to repair all setup violations"), while hold reported no violations
-- Placement displacement after legalization: 819.9 µm total, 10.3 µm maximum
-- Design area **997 µm², 86 % utilization**
+- a warning that **not all setup violations could be repaired**, while hold reported no violations
+- legalization displacement of 819.9 µm total, 10.3 µm maximum
 
-The setup warning here is worth remembering, because the global-route timing report (Figure 12) still shows negative slack for this design.
+<p align="center">
+  <img src="images/07_clock_tree_synthesis.png" width="700" alt="CTS and timing repair log"/>
+</p>
 
-### 5.4 Global routing
+### Global Routing
 
-**Figure 8 — Global routing**
+Global routing plans approximate wire paths through routing regions and checks congestion. The log shows incremental global routing, a congestion report, and the antenna repair step, which found **0 net violations and 0 pin violations**.
 
-![Global routing](./images/08_global_routing.png)
+<p align="center">
+  <img src="images/08_global_routing.png" width="700" alt="Global routing log"/>
+</p>
 
-`5_1_grt.log` shows incremental global routing with congestion reports and a repair-antennas step that found **0 net violations and 0 pin violations**. Design area is **1034 µm² at 90 % utilization**. The file listing at the bottom confirms the routing outputs `5_1_grt.odb` and `5_2_route.log` were produced.
+### Detailed Routing
 
-### 5.5 Detailed routing
+Detailed routing assigns the actual wire geometry on each metal layer and inserts vias. The `5_2_route.log` tail shows:
 
-**Figure 9 — Detailed routing**
-
-![Detailed routing](./images/09_detailed_routing.png)
-
-Tail of `5_2_route.log`:
-
-- Total vias: **4415**, split as metal1 = 2074, metal2 = 1869, metal3 = 290, metal4 = 135, metal5 = 47 (metal6 and above unused)
-- Zero wire length on metal9 and metal10
-- Antenna check: **0 net violations, 0 pin violations**
+- **4415 vias** in total: metal1 = 2074, metal2 = 1869, metal3 = 290, metal4 = 135, metal5 = 47 (metal6 and above unused)
+- **0 antenna net violations and 0 pin violations**
 - `detailed_route` took about 30 s and wrote `5_2_route.odb`
 
-### 5.6 Metal fill and fill cells
+<p align="center">
+  <img src="images/09_detailed_routing.png" width="700" alt="Detailed routing log"/>
+</p>
 
-**Figure 10 — Metal fill stage**
+### Metal Fill and Fill Cells
 
-![Metal fill](./images/10_metal_fill.png)
+The `6_1_fill` stage reads the routed database and writes `6_1_fill.odb`. Separately, `filler_placement` with `FILLCELL_X1` through `FILLCELL_X32` **placed 178 filler instances**. Filler cells keep the well and implant layers continuous; they add no logic, so the area stays at 1034 µm².
 
-The `6_1_fill` stage log shows the routed database being read, constraints and RC settings sourced, and `6_1_fill.odb` written. The flow directory listing shows the complete set of numbered logs from `1_1_yosys_canonicalize` through `6_report`.
+<p align="center">
+  <img src="images/10_metal_fill.png" width="700" alt="Metal fill stage log"/>
+</p>
 
-**Figure 11 — Fill-cell insertion**
+<p align="center">
+  <img src="images/11_fill_cell_insertion.png" width="700" alt="Fill-cell insertion log"/>
+</p>
 
-![Fill cell insertion](./images/11_fill_cell_insertion.png)
+### Global-Route Timing and Power Report
 
-`5_3_fillcell.log`: `filler_placement` was run with `FILLCELL_X1/X2/X4/X8/X16/X32` and **placed 178 filler instances**, with design area unchanged at **1034 µm², 90 % utilization**. Filler cells maintain well and implant continuity; they add no logic.
+`reports/nangate45/gcd/base/5_global_route.rpt` gives a quick timing and power picture after global routing:
 
-### 5.7 Global-route timing and power report
+- critical-path delay **0.4358**, critical-path slack **−0.2358** (negative)
+- slack ÷ critical-path delay: **−54.107389**
+- total power **1.15e-02 W**: sequential 13.3 %, combinational 82.0 %, clock 4.8 %, macro and pad 0 %
+- by mechanism: internal 53.1 %, switching 46.6 %, leakage 0.3 %
 
-**Figure 12 — Global-route report**
+The negative slack matches the CTS warning above: timing repair did not fully close setup on this run.
 
-![Global-route report](./images/12_design_metrics.png)
+<p align="center">
+  <img src="images/12_design_metrics.png" width="700" alt="Global-route timing and power report"/>
+</p>
 
-`cat reports/nangate45/gcd/base/5_global_route.rpt` for `gcd`:
+### Database Checkpoints and Final Layout
 
-- Critical-path source clock latency (min): 0.0000; target clock latency (min): 0.0733
-- Critical path delay: **0.4358**
-- Critical path slack: **-0.2358** (negative)
-- Slack divided by critical-path delay: **-54.107389**
-- Power: total **1.15e-02 W**, split as sequential 13.3 %, combinational 82.0 %, clock 4.8 %, macro and pad 0 %. Internal power is 53.1 % of the total, switching 46.6 %, and leakage 0.3 %.
+A `find` over `results/nangate45/gcd/base/` lists every checkpoint, from `1_synth.odb` (637,028 bytes) to `6_final.odb` (**1,382,631 bytes**). The size stays flat across `5_3_fillcell`, `5_route`, `6_1_fill` and `6_final`, since the later stages only add fill. The listing contains `.odb` files only; no `.gds` file appears in it.
 
-Values are copied as printed; the report does not show units in this view. The negative slack agrees with the CTS warning in section 5.3.
+<p align="center">
+  <img src="images/13_database_checkpoints.png" width="700" alt="Stage database listing"/>
+</p>
 
-### 5.8 Database checkpoints and final layout
+The finished `6_final` database opened in the OpenROAD GUI through noVNC:
 
-**Figure 13 - Stage database listing**
+<p align="center">
+  <img src="images/14_final_layout.png" width="700" alt="Final gcd layout in OpenROAD GUI"/>
+</p>
 
-![Database checkpoints](./images/13_database_checkpoints.png)
+---
 
-A `find` over `results/nangate45/gcd/base/` lists every `.odb` checkpoint and its size, from `1_synth.odb` (637,028 bytes) through `6_final.odb` (**1,382,631 bytes**). The size stays flat across `5_3_fillcell`, `5_route`, `6_1_fill`, and `6_final`, as expected since later stages only add fill. This listing shows a complete chain of stage databases; **no `.gds` file appears in this output**, so it is not evidence that GDS streaming was completed.
+## 4. Parasitic Extraction
 
-**Figure 14 - Final layout in OpenROAD GUI**
+Post-route STA needs parasitics that match the final route. Instead of reusing older final-stage files, I extracted a fresh SPEF from the latest routed database. Every STA run used:
 
-![Final layout](./images/14_final_layout.png)
+- **Routed database:** `results/sky130hd/vsdbabysoc/base/5_2_route.odb`
+- **Constraints:** `results/sky130hd/vsdbabysoc/base/5_1_grt.sdc`
+- **Parasitics:** `results/sky130hd/vsdbabysoc/base/5_2_route_fresh.spef`
+- **Standard-cell timing:** one of 16 SKY130HD Liberty corner files per run
+- **Macro timing:** `designs/sky130hd/vsdbabysoc/lib/avsddac.lib` and `avsdpll.lib`
 
-The completed `6_final` database for `gcd` opened in the OpenROAD GUI via noVNC, with the metal1 to metal6 layer controls visible and the routed layout displayed.
+---
 
-## 6. Parasitic extraction
+## 5. Post-Route STA on VSDBABYSOC
 
-For post-route STA on VSDBABYSOC, fresh parasitics were extracted from the latest routed database instead of reusing older final-stage files that might not match the latest route. The inputs to every STA run were:
+### Routed Layout
 
-| Input | File |
-|---|---|
-| Routed database | `results/sky130hd/vsdbabysoc/base/5_2_route.odb` |
-| Constraints | `results/sky130hd/vsdbabysoc/base/5_1_grt.sdc` |
-| Parasitics | `results/sky130hd/vsdbabysoc/base/5_2_route_fresh.spef` |
-| Standard-cell timing | One of 16 SKY130HD Liberty corner files per run |
-| Macro timing | `designs/sky130hd/vsdbabysoc/lib/avsddac.lib` and `avsdpll.lib` |
+The routed `vsdbabysoc` design in the OpenROAD GUI. The large pink block labelled `dac` is the DAC macro, with the PLL region at the top. The Scripting pane shows the `read_liberty` commands that load the `avsddac.lib` and `avsdpll.lib` macro models.
 
-## 7. Post-route STA on VSDBABYSOC
+<p align="center">
+  <img src="images/15_vsdbabysoc_routed_gui.png" width="700" alt="VSDBABYSOC routed design in OpenROAD GUI"/>
+</p>
 
-### 7.1 Routed layout
+### Typical-Corner Result
 
-**Figure 15 — VSDBABYSOC routed design in OpenROAD GUI**
+At `tt_025C_1v80` with an **11.00 ns** clock period:
 
-![VSDBABYSOC routed GUI](./images/15_vsdbabysoc_routed_gui.png)
+- worst setup slack **6.13 ns**
+- worst hold slack **0.32 ns**
+- setup TNS and hold TNS **0.0 ns**
 
-The routed `vsdbabysoc` design with the large pink block labelled `dac` and the PLL region at the top. The Scripting pane shows the `read_liberty` commands that load the `avsddac.lib` and `avsdpll.lib` macro models, which is how the macros were included in timing analysis.
+### Slack Histograms
 
-### 7.2 Typical-corner timing
+The endpoint-slack charts for clock `clk` show **30 unconstrained pins** for setup and **26** for hold. Unconstrained pins are not checked by any constraint, so positive slack does not mean every path is covered.
 
-The `gcd` global-route timing and power report is Figure 12 (section 5.7); it is a different design from VSDBABYSOC.
+<p align="center">
+  <img src="images/16_setup_slack_histogram.png" width="700" alt="Setup slack histogram"/>
+</p>
 
-The VSDBABYSOC typical-corner numbers come from the written post-route STA report (section 11), not from this screenshot:
+<p align="center">
+  <img src="images/17_hold_slack_histogram.png" width="700" alt="Hold slack histogram"/>
+</p>
 
-- Clock period: **11.00 ns**
-- Worst setup slack: **6.13 ns**; worst hold slack: **0.32 ns**
-- Setup TNS and hold TNS: **0.0 ns**
+### 16-Corner Experiment
 
-### 7.3 Slack histograms
+Running STA by hand for every corner would be slow and hard to compare, so I automated it with a Tcl script and a shell loop (`/tmp/run_sta16.sh`). For each corner it reads one standard-cell Liberty file, then the DAC and PLL macro libraries, the routed `.odb`, the `.sdc`, `setRC.tcl` and the `.spef`. It then runs `report_checks` for max and min paths and `report_worst_slack` for max and min, saving a log per corner.
 
-**Figure 16 — Setup slack histogram**
+<p align="center">
+  <img src="images/18_sta_corner_script.png" width="700" alt="Corner sweep script and run output"/>
+</p>
 
-![Setup slack histogram](./images/16_setup_slack_histogram.png)
+The results are collected in `summary.csv`. It reports `Completed: 32 corner logs`: 16 corners with two log files each, so every corner appears twice with identical values. The status column says `PASS` for every row, which only means the tool run finished.
 
-**Figure 17 — Hold slack histogram**
+<p align="center">
+  <img src="images/19_corner_sweep_summary.png" width="700" alt="Corner sweep summary CSV"/>
+</p>
 
-![Hold slack histogram](./images/17_hold_slack_histogram.png)
-
-Both are endpoint-slack charts for clock `clk` in the OpenROAD GUI. The setup chart shows **30 unconstrained pins** and the hold chart shows **26**. Unconstrained pins are not checked by any timing constraint, so a positive slack figure alone does not prove every path is covered.
-
-### 7.4 Sixteen-corner experiment
-
-**Figure 18 — Corner-sweep script**
-
-![STA corner script](./images/18_sta_corner_script.png)
-
-The script `/tmp/run_sta16.sh` loops over the corners. For each one it reads one standard-cell Liberty file, then the DAC and PLL macro Liberty files, then the routed `.odb`, the `.sdc`, `setRC.tcl`, and the `.spef`. It then runs `report_checks` for max and min paths and `report_worst_slack` for max and min, and saves a per-corner log. The terminal below it prints `OK` for each corner as it completes.
-
-**Figure 19 — Summary CSV**
-
-![Corner sweep summary](./images/19_corner_sweep_summary.png)
-
-`summary.csv` reports `Completed: 32 corner logs`. That is 16 corners, each with two log files (a plain log and an `.openroad` log), so each corner appears twice in the CSV. The columns are corner, worst setup slack, worst hold slack, WNS, TNS, and status. All rows say `PASS`, which is the **tool-run status**, not a timing verdict.
-
-**Library scope.** The 16 corners come from the separate SKY130 standard-cell library repository (`skywater-pdk-libs-sky130_fd_sc_hd/timing/`). They are **not** the three-part Liberty files from the VSDBABYSOC repository's own `timing/` folder. The DAC and PLL models were held at their existing characterization in every run, so this is a 16-corner standard-cell sweep, not a full multi-corner characterization of the macros.
+The 16 corners come from the separate SKY130 standard-cell library repository (`skywater-pdk-libs-sky130_fd_sc_hd/timing/`), not from the three-part Liberty files in the VSDBABYSOC repository's own `timing/` folder. The DAC and PLL models stayed at their existing characterization in every run.
 
 | Corner | Setup slack (ns) | Hold slack (ns) | Setup TNS (ns) | Setup result |
 |---|---:|---:|---:|---|
@@ -276,115 +240,86 @@ The script `/tmp/run_sta16.sh` loops over the corners. For each one it reads one
 
 Values are rounded to two decimals from the recorded output. Hold TNS is 0.0 ns at all 16 corners.
 
-## 8. Results and observations
+---
+
+## 6. Results and Observations
 
 **Timing across corners**
 
-- All 16 runs completed, yet **six corners have negative worst setup slack**: ss_100C_1v40, ss_n40C_1v28, ss_n40C_1v35, ss_n40C_1v40, ss_n40C_1v44, and ss_n40C_1v60.
+- All 16 runs completed, but **six corners have negative worst setup slack**: ss_100C_1v40, ss_n40C_1v28, ss_n40C_1v35, ss_n40C_1v40, ss_n40C_1v44 and ss_n40C_1v60.
 - The worst case is **−29.21 ns at ss_n40C_1v28**, with setup TNS of −14131.26 ns.
-- At the slow-slow, −40 °C corner, setup slack improves steadily as the supply voltage rises: −29.21 ns (1.28 V), −16.31 (1.35 V), −10.87 (1.40 V), −7.69 (1.44 V), −0.45 (1.60 V), +2.91 ns (1.76 V). Lower voltage means slower cells.
-- Hold behaves the other way round. Hold slack is smallest at the fast corners (0.20 ns at ff_100C_1v95 and ff_n40C_1v95) and largest at slow corners (1.80 ns at ss_n40C_1v28). All hold slacks are positive.
+- At the slow-slow, −40 °C corner, setup slack improves steadily as supply voltage rises: −29.21 ns (1.28 V), −16.31 (1.35 V), −10.87 (1.40 V), −7.69 (1.44 V), −0.45 (1.60 V), +2.91 ns (1.76 V). Lower voltage makes the cells slower.
+- Hold behaves the opposite way. It is tightest at the fast corners (0.20 ns at ff_100C_1v95 and ff_n40C_1v95) and loosest at slow corners (1.80 ns at ss_n40C_1v28). All hold slacks are positive.
 
 **Routing**
 
-- The recorded VSDBABYSOC detailed-route output reported **28 DRC violations**, identified as **Metal 1 shorts** around the DAC-related area and nets. No antenna net/pin violations were reported. Approximate routed wire length was **227,853 µm**, via count **50,026**, and reported utilization **19 %**. These figures are from the recorded run output cited in the STA report; the screenshot of that log is not part of this evidence set. Figure 9 is the `gcd` routing log, not VSDBABYSOC.
-- The evidence does not show that the 28 shorts were later removed, so the design is **not described as DRC-clean**.
+- The recorded VSDBABYSOC detailed-route output reported **28 DRC violations**, all **Metal 1 shorts** around the DAC-related area and nets. No antenna net or pin violations were reported.
+- Approximate routed wire length was **227,853 µm**, via count **50,026** and utilization **19 %**.
+- Nothing recorded shows the 28 shorts were later removed, so the layout is not DRC-clean.
 
-**Caveats that apply to the whole analysis**
+**Limitations**
 
-- Positive typical-corner slack and six failing slow corners are separate findings and are reported together.
-- 30 setup and 26 hold unconstrained pins remain in the GUI charts.
-- The macros were not swept across corners.
+- Positive typical-corner slack and the six failing slow corners are separate findings and have to be read together.
+- The 30 setup and 26 hold unconstrained pins are not covered by any slack number.
+- The macros were not swept across corners, so this is a 16-corner standard-cell sweep, not a full macro-and-cell characterization.
 
-## 9. Technical learnings
+---
 
-1. The flow is a chain of checkpoints (synthesis, floorplan, placement, CTS, routing, fill), and each writes its own database and log. Each one answers a different question, and the numbered `.odb` files let me inspect any stage.
-2. Area and utilization rise through the flow (61 % → 74 % → 86 % → 90 % for `gcd`) because timing-repair buffers, clock buffers, and tap cells are added at each step.
-3. A log line can contradict a clean-looking layout. CTS reported that some setup violations could not be repaired, and the global-route report still shows negative slack. A complete layout image is not proof of timing closure.
-4. Post-route STA is only meaningful when the database, SDC, SPEF, and Liberty files all describe the same run, which is why fresh SPEF was extracted.
-5. Setup and hold are stressed at opposite corners: setup fails at slow, low-voltage corners; hold is tightest at fast, high-voltage corners. Sign-off needs both ends.
-6. A script "completing" (`OK`, `PASS`) is a tool status, not a timing result. Slack and TNS have to be read from the numbers.
-7. Slack figures do not cover unconstrained pins, so the unconstrained-pin count has to be checked alongside WNS and TNS.
-8. Library provenance and scope must be stated: the 16 corners came from a separate SKY130 repository, and the macros stayed at fixed characterization.
-9. A stage listing of `.odb` files is not a GDS deliverable. The final-database chain and the GDS stream are different checks.
+## 7. Technical Learnings
 
-## 10. Problems faced and how we addressed them
+1. **The flow is a chain of checkpoints.** Synthesis, floorplan, placement, CTS, routing and fill each write their own database and log, and each answers a different question.
+2. **Area and utilization rise through the flow** (61 % → 74 % → 86 % → 90 % for `gcd`) because tap cells, timing-repair buffers and clock buffers are added at each step.
+3. **A clean-looking layout is not timing closure.** CTS warned that some setup violations could not be repaired, and the global-route report still shows negative slack.
+4. **Post-route STA is only meaningful when the database, SDC, SPEF and Liberty files describe the same run.** That is why a fresh SPEF was extracted.
+5. **Setup and hold are stressed at opposite corners.** Setup fails at slow, low-voltage corners; hold is tightest at fast, high-voltage corners. Sign-off needs both ends.
+6. **`OK` or `PASS` from a script is a tool status, not a timing result.** Slack and TNS have to be read from the numbers.
+7. **Slack does not cover unconstrained pins**, so their count has to be checked alongside WNS and TNS.
+8. **Library provenance matters.** The corners came from a separate SKY130 repository and the macros were held fixed, so the scope of the result has to be stated.
+9. **A list of `.odb` checkpoints is not a GDS deliverable.** The final-database chain and GDS streaming are separate checks.
 
-The obstacles below were worked through enough to complete the runs and the analysis. That does not mean every underlying design-quality issue was resolved.
+---
 
-### 10.1 Environment and flow navigation
+## 8. Problems Faced and How I Addressed Them
 
-**Challenge:** Getting the Codespace running and finding the right flow, platform, design, and report paths.
+### Environment and flow navigation
 
-**Approach:** Checked the tool version (Figure 3), changed into the ORFS `flow` directory, and used `ls` and `tail` on `logs/<platform>/<design>/base/` to find each stage's outputs.
+Getting the Codespace running and finding the right flow, platform, design and report paths took some digging. I checked the tool version first, moved into the ORFS `flow` directory, and used `ls` and `tail` on `logs/<platform>/<design>/base/` to find each stage's outputs. After that the flow ran end to end and every stage could be inspected.
 
-**Outcome:** The flow ran end to end and every stage's log and database could be inspected.
+### Consistency of post-route timing inputs
 
-### 10.2 Consistency of post-route timing inputs
+Older final-stage files could be stale relative to the latest routed database, which would make the layout and the timing disagree. I generated a fresh SPEF (`5_2_route_fresh.spef`) from the latest routed database and used it in every STA run.
 
-**Challenge:** Older final-stage files could be stale relative to the latest routed database, so the layout and timing evidence might not match.
+### Repeating STA across 16 corners
 
-**Approach:** Generated a fresh SPEF from the latest routed database (`5_2_route_fresh.spef`) and used it in every STA run.
+Manual repetition across corners is slow and error-prone. The Tcl script and shell loop saved a log per corner and collected everything into `summary.csv`, which made the corners directly comparable and exposed the six setup-negative ones.
 
-**Outcome:** The typical-corner report corresponds to the latest route.
+### Reading "OK" as "timing passed"
 
-### 10.3 Repeating STA across 16 corners
+Every corner printed `OK` and `PASS`, which is easy to mistake for a timing pass. I read worst setup slack, worst hold slack and TNS for each corner instead of relying on the exit status.
 
-**Challenge:** Running timing by hand for many Liberty corners is slow and error-prone, and hard to compare.
+### Duplicate rows in the summary
 
-**Approach:** Wrote a Tcl script driven by a shell loop (Figure 18) that saves a log per corner and collects results into `summary.csv` (Figure 19).
+`summary.csv` reported 32 corner logs with each corner listed twice. The duplicate rows had identical values and came from two log files per corner, so the results are reported as 16 unique corners.
 
-**Outcome:** All 16 corners ran and produced comparable numbers. The sweep exposed six setup-negative corners.
+### Routing DRC violations
 
-### 10.4 Reading "OK" as "timing passed"
+The VSDBABYSOC detailed-route output contained 28 Metal 1 shorts. Inspecting the route log and DRC report located them around the DAC-area nets. They are documented, but not shown to be fixed.
 
-**Challenge:** The run status printed `OK` / `PASS` for every corner, which is easy to mistake for a timing pass.
+### Library-set scope
 
-**Approach:** Read worst setup slack, worst hold slack, and TNS for each corner and judged the numbers rather than the exit status.
+The corner libraries came from a different repository than the three-part Liberty set in the VSDBABYSOC `timing/` folder. I recorded the source of the 16 files and noted that the repository's own Liberty set was not used for the sweep.
 
-**Outcome:** The write-up separates "analysis completed" from "timing met". Six corners remain setup-negative.
+---
 
-### 10.5 Duplicate rows in the summary
+## 9. Supporting Documents
 
-**Challenge:** `summary.csv` reported 32 corner logs, with each corner appearing twice.
+- [`vsdbabysoc_post_route_sta_report.pdf`](./vsdbabysoc_post_route_sta_report.pdf) – post-route STA report with all 16 corners at full precision, the unconstrained-pin note and the routing caveats
+- [`vsdbabysoc_post_route_sta_report.docx`](./vsdbabysoc_post_route_sta_report.docx) – editable version of the same report
 
-**Approach:** Checked that the duplicate rows have identical values and trace to two log files per corner.
+---
 
-**Outcome:** The results are reported as 16 unique corners.
+## 10. Conclusion
 
-### 10.6 Routing DRC violations
+This week connected the stages of an RTL-to-layout flow: a stage-by-stage walkthrough on the `nangate45/gcd` reference design, then a post-route multi-corner timing analysis of VSDBABYSOC on SKY130HD.
 
-**Challenge:** The VSDBABYSOC detailed-route output contained 28 Metal 1 shorts.
-
-**Approach:** Inspected the route log and DRC report to find the violation type and the affected DAC-area nets.
-
-**Outcome:** The issue is located and documented, but the evidence does not show it was eliminated, so no DRC-clean claim is made.
-
-### 10.7 Library-set scope
-
-**Challenge:** The corner libraries came from a different repository than the three-part Liberty set inside the VSDBABYSOC repo's `timing/` folder.
-
-**Approach:** Recorded the exact source of the 16 corner files and stated that the repo's own Liberty set was not used for the sweep.
-
-**Outcome:** Method and limits are stated, and the result is not presented as full multi-corner characterization of the macros.
-
-### 10.8 Mixed evidence from two designs
-
-**Challenge:** The step-by-step flow screenshots were captured on the bundled `nangate45/gcd` design, while the sign-off-style analysis is on VSDBABYSOC.
-
-**Approach:** Added the evidence map in section 2 and labelled each figure with its design.
-
-**Outcome:** No `gcd` number is presented as a VSDBABYSOC number.
-
-## 11. Supporting documents
-
-- [`vsdbabysoc_post_route_sta_report.pdf`](./vsdbabysoc_post_route_sta_report.pdf): full post-route STA report with all 16 corners at full precision, the unconstrained-pin note, and the routing and sign-off caveats.
-- [`vsdbabysoc_post_route_sta_report.docx`](./vsdbabysoc_post_route_sta_report.docx): editable version of the same report.
-
-## 12. Conclusion
-
-This week connected the major stages of an RTL-to-layout flow, with a stage-by-stage walkthrough on the `nangate45/gcd` reference design and a post-route multi-corner timing analysis of VSDBABYSOC on SKY130HD.
-
-The flow and all 16 corner runs completed. The analysis also exposed real concerns: six corners with negative setup slack (worst −29.21 ns at ss_n40C_1v28), 28 recorded Metal 1 shorts near the DAC, and unconstrained pins that positive slack numbers do not cover. These are open engineering tasks. They are not hidden by the fact that the tools ran to completion.
-
-The main skills gained were validating each checkpoint against its own report, keeping routed database, constraints, SPEF, and Liberty files consistent, automating a corner sweep, and reporting the results as they are.
+The flow and all 16 corner runs completed. The analysis also exposed open issues: six corners with negative setup slack (worst −29.21 ns at ss_n40C_1v28), 28 recorded Metal 1 shorts near the DAC, and unconstrained pins that slack numbers do not cover. The main skills gained were validating each checkpoint against its own report, keeping the routed database, constraints, SPEF and Liberty files consistent, automating a corner sweep, and reading the results as they are.
