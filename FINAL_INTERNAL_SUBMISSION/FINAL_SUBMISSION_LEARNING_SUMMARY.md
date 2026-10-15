@@ -10,12 +10,12 @@ The work demonstrates the relationship between functional correctness and physic
 
 | Path | Purpose |
 |---|---|
-| [Week 1 — RTL](./Week_1_RTL) | RTL, testbenches, Icarus Verilog, GTKWave and introductory Yosys synthesis |
-| [Week 2 — RTL](./Week_2_RTL) | Logic optimization, GLS, coding pitfalls, inferred latches, generate constructs and RCA |
-| [Week 3 — Physical Design](./Week_3_Physical_Design) | Five modules covering the open-source ASIC flow, floorplanning, cell characterization/layout, timing/CTS, routing and DRC |
-| [Week 4 — VSDBABYSOC](./Week_4_VSDBABYSOC) | ORFS stage-by-stage flow evidence, post-route SPEF and 16-corner STA |
-| [BabySoC lab](./LABS_Baby_SOC) | PLL → RVMYTH → DAC; RTL simulation, Yosys synthesis and functional GLS |
-| [Assignments](./Assignments) | Sequence-detector RTL-to-GLS assessment, multi-corner STA assessment, and a link to the Week 4 physical-design work |
+| [Week 1 — RTL](../Week_1_RTL) | RTL, testbenches, Icarus Verilog, GTKWave and introductory Yosys synthesis |
+| [Week 2 — RTL](../Week_2_RTL) | Logic optimization, GLS, coding pitfalls, inferred latches, generate constructs and RCA |
+| [Week 3 — Physical Design](../Week_3_Physical_Design) | Five modules covering the open-source ASIC flow, floorplanning, cell characterization/layout, timing/CTS, routing and DRC |
+| [Week 4 — VSDBABYSOC](../Week_4_VSDBABYSOC) | ORFS stage-by-stage flow evidence, post-route SPEF and 16-corner STA |
+| [BabySoC lab](../LABS_Baby_SOC) | PLL → RVMYTH → DAC; RTL simulation, Yosys synthesis and functional GLS |
+| [Assignments](../Assignments) | Sequence-detector RTL-to-GLS assessment, multi-corner STA assessment, and a link to the Week 4 physical-design work |
 
 The main story is a progression from describing digital behavior, to checking synthesized logic, to understanding physical implementation, and finally to timing analysis using physical parasitics.
 
@@ -23,7 +23,7 @@ The main story is a progression from describing digital behavior, to checking sy
 
 ## 2. Week 1 — RTL, simulation and introductory synthesis
 
-**Main file:** [Week_1_RTL/README.md](./Week_1_RTL/README.md)
+**Main file:** [Week_1_RTL/README.md](../Week_1_RTL/README.md)
 
 ### Work represented in the folder
 
@@ -55,7 +55,7 @@ The first week establishes the basic path:
 
 ## 3. Week 2 — Optimization, GLS and coding pitfalls
 
-**Main file:** [Week_2_RTL/README.md](./Week_2_RTL/README.md)
+**Main file:** [Week_2_RTL/README.md](../Week_2_RTL/README.md)
 
 ### Combinational and sequential optimization
 
@@ -91,11 +91,11 @@ Simulation success alone is not enough: coding style affects inferred hardware, 
 
 ## 4. Week 3 — Physical-design concepts across five modules
 
-**Folder:** [Week_3_Physical_Design](./Week_3_Physical_Design)
+**Folder:** [Week_3_Physical_Design](../Week_3_Physical_Design)
 
 ### Module 1 — Open-source EDA, OpenLane and RTL-to-GDSII
 
-**File:** [Module 1 README](./Week_3_Physical_Design/Module_1/README.md)
+**File:** [Module 1 README](../Week_3_Physical_Design/Module_1/README.md)
 
 This module introduces the ASIC ecosystem: RTL/IP, EDA tools, the PDK and the foundry. It uses a RISC-V core example and explains that a PDK contains process-specific information such as standard-cell libraries, timing data, physical abstracts, device models and design rules.
 
@@ -105,7 +105,7 @@ The practical section covers a Docker-based OpenLane environment and interactive
 
 ### Module 2 — Floorplanning and standard cells
 
-**File:** [Module 2 README](./Week_3_Physical_Design/Module_2/README.md)
+**File:** [Module 2 README](../Week_3_Physical_Design/Module_2/README.md)
 
 - **Die:** overall chip area.
 - **Core:** the region where standard-cell logic is placed.
@@ -118,7 +118,7 @@ A standard cell is a characterized logic building block with a defined physical 
 
 ### Module 3 — Characterization, layout, Magic and ngspice
 
-**File:** [Module 3 README](./Week_3_Physical_Design/Module_3/README.md)
+**File:** [Module 3 README](../Week_3_Physical_Design/Module_3/README.md)
 
 This module connects transistor-level behavior to physical layout. CMOS inverter characterization can examine the voltage-transfer characteristic, switching threshold, propagation delay, rise/fall time and transient response. The fabrication sequence and SKY130 layers explain how a circuit becomes physical geometry.
 
@@ -126,7 +126,7 @@ Magic is used to inspect/edit layout and perform checks and extraction. Extracti
 
 ### Module 4 — Timing analysis and CTS
 
-**File:** [Module 4 README](./Week_3_Physical_Design/Module_4/README.md)
+**File:** [Module 4 README](../Week_3_Physical_Design/Module_4/README.md)
 
 The module introduces Liberty timing data, LEF physical information and SDC timing constraints. STA checks timing paths without needing to simulate every possible input sequence.
 
@@ -140,7 +140,7 @@ Before CTS, an ideal clock assumption can be used for early estimates. CTS build
 
 ### Module 5 — Routing, DRC and physical implementation
 
-**File:** [Module 5 README](./Week_3_Physical_Design/Module_5/README.md)
+**File:** [Module 5 README](../Week_3_Physical_Design/Module_5/README.md)
 
 Global routing plans approximate paths and produces routing guides. Detailed routing constructs actual wire geometry and vias on the permitted metal layers. TritonRoute is associated with detailed routing in the open-source flow. The module also covers maze routing/Lee's algorithm, power distribution, route guides, connectivity between guides and routing topology.
 
@@ -154,8 +154,8 @@ Physical design is not simply drawing the circuit. It must balance area, power d
 
 ## 5. BabySoC lab — RTL through functional GLS
 
-**Primary detailed file:** [LABS_Baby_SOC/LABS_Baby_SOC/README.md](./LABS_Baby_SOC/LABS_Baby_SOC/README.md)  
-**Short overview:** [LABS_Baby_SOC/README.md](./LABS_Baby_SOC/README.md)
+**Primary detailed file:** [LABS_Baby_SOC/LABS_Baby_SOC/README.md](../LABS_Baby_SOC/LABS_Baby_SOC/README.md)  
+**Short overview:** [LABS_Baby_SOC/README.md](../LABS_Baby_SOC/README.md)
 
 The documented design connects three main blocks:
 
@@ -175,7 +175,7 @@ The synthesis notes distinguish `dfflibmap` (sequential-cell mapping) from `abc`
 
 ## 6. Assignment 1 — Sequence detector RTL-to-GLS
 
-**File:** [Assignment 1 README](./Assignments/Assignments/Assignment_1_Sequence_Detector/README.md)  
+**File:** [Assignment 1 README](../Assignments/Assignments/Assignment_1_Sequence_Detector/README.md)  
 **RTL:** `src/sequence_detector.v` · **Testbench:** `src/tb.v`
 
 The assignment implements a seven-bit serial sequence detector for `0010010`. The FSM state represents the length of the target prefix matched by the recent input history. A mismatch can return to a nonzero state when the suffix of the received bits still matches a prefix of the target; this permits overlapping matches and resembles the failure-transition idea in KMP string matching.
@@ -190,7 +190,7 @@ The evidence includes RTL waveform, Yosys statistics, netlist/flip-flop views, G
 
 ## 7. Assignment 2 — Multi-corner STA on a synthesized design
 
-**File:** [Assignment 2 README](./Assignments/Assignments/Assignment_2_Multi_Corner_STA/README.md)
+**File:** [Assignment 2 README](../Assignments/Assignments/Assignment_2_Multi_Corner_STA/README.md)
 
 This assessment explores SKY130HD PVT (process, voltage and temperature) corners using OpenSTA. A Liberty filename identifies the characterization point; for example, `ss_n40C_1v28` denotes a slow-slow process corner at −40 °C and 1.28 V.
 
@@ -209,8 +209,8 @@ The assessment README reports 18 corner entries plus a TT baseline; two assessme
 
 ## 8. Assignment 3 / Week 4 — Physical flow and post-route STA
 
-**Main file:** [Week 4 README](./Week_4_VSDBABYSOC/README.md)  
-**Full supporting report:** [PDF](./Week_4_VSDBABYSOC/vsdbabysoc_post_route_sta_report.pdf) · [DOCX](./Week_4_VSDBABYSOC/vsdbabysoc_post_route_sta_report.docx)
+**Main file:** [Week 4 README](../Week_4_VSDBABYSOC/README.md)  
+**Full supporting report:** [PDF](../Week_4_VSDBABYSOC/vsdbabysoc_post_route_sta_report.pdf) · [DOCX](../Week_4_VSDBABYSOC/vsdbabysoc_post_route_sta_report.docx)
 
 Week 4 contains two related but distinct experiments:
 
@@ -243,8 +243,8 @@ The three-part Liberty files in the VSDBABYSOC repository's own `timing/` folder
 The Week 4 README reports a clock period of 11.00 ns. At `tt_025C_1v80`, setup slack is 6.13 ns and hold slack is 0.32 ns. All 16 runs completed, but six corners have negative worst setup slack. The worst is `ss_n40C_1v28`, at −29.21 ns WNS and −14,131.26 ns setup TNS. Hold slack is positive at all recorded corners; hold TNS is 0.0 ns.
 
 The README includes two SVG graphs:
-- [WNS by Liberty corner](./Week_4_VSDBABYSOC/images/sta_wns_by_corner.svg)
-- [Setup TNS by Liberty corner](./Week_4_VSDBABYSOC/images/sta_tns_by_corner.svg)
+- [WNS by Liberty corner](../Week_4_VSDBABYSOC/images/sta_wns_by_corner.svg)
+- [Setup TNS by Liberty corner](../Week_4_VSDBABYSOC/images/sta_tns_by_corner.svg)
 
 The x-axis contains the 16 unique standard-cell Liberty corners. The y-axis gives WNS or setup TNS in nanoseconds. Negative values represent setup violations. The original summary contained 32 log entries because each corner appeared in two log files with identical values; the analysis uses the 16 unique corners.
 
