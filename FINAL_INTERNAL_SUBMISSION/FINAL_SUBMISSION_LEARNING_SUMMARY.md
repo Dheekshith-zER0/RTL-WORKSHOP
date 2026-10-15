@@ -1,8 +1,10 @@
-# Final Submission — Complete Repository Walkthrough and Learning Summary
+# RTL Design and Physical Design Workshop — Final Technical Report
 
-This document is the extended companion to [the 5–6 minute video script](./FINAL_SUBMISSION_VIDEO_SCRIPT.md). It explains the repository's progression, the purpose of the main folders, the key technical concepts, the experiments and the limitations that should be represented accurately in the final submission.
+## Abstract
 
-The video deliberately follows a result-first route. This document follows the technical progression so it can also serve as a longer reference.
+This report summarizes the work documented in the RTL Design and Synthesis Workshop repository, progressing from RTL design and simulation to synthesis, gate-level verification, physical-design concepts, and post-route static timing analysis. It consolidates the major activities, tools, technical concepts, results, and limitations documented across Weeks 1–4, the BabySoC lab, and the assignments.
+
+The work demonstrates the relationship between functional correctness and physical implementation. Simulation and synthesis provide evidence about logic behavior and implementation structure, while placement, clock-tree synthesis, routing, parasitic extraction, and timing analysis reveal additional physical constraints. The report records unresolved timing and routing findings alongside the results rather than treating successful tool execution as proof of sign-off.
 
 ## 1. Repository map
 
@@ -33,7 +35,7 @@ The main story is a progression from describing digital behavior, to checking sy
 - Introduction to Liberty files, which describe standard cells and their characterized timing information.
 - Comparison of synchronous reset, which takes effect at an active clock edge, with asynchronous reset, which can take effect independently of that edge.
 
-### Concepts to be able to explain
+### Core concepts and findings
 
 **RTL simulation:** asks whether the modeled design behaves as expected for the stimulus applied by the testbench. A waveform is evidence of that behavior for the tested scenario, not a proof of all possible scenarios.
 
@@ -312,18 +314,12 @@ The appropriate summary is that the investigation and documentation challenges w
 
 ---
 
-## 11. Suggested final-video navigation
+## 11. Overall conclusion
 
-Use this path for a connected story rather than opening every file:
+The repository documents a progression from describing digital hardware in RTL to examining synthesized logic and understanding its physical implementation. Week 1 establishes the simulation and synthesis workflow. Week 2 shows how coding style, optimization, and gate-level verification affect the resulting logic. Week 3 develops the physical-design concepts required to understand floorplanning, cell layout, timing, clock distribution, routing, and physical verification.
 
-1. **Week 4 graphs:** introduce the result and the reason multi-corner timing matters.
-2. **Week 1:** show a simple RTL waveform and the first synthesis step.
-3. **Week 2:** show RTL/GLS comparison and an inferred-latch example.
-4. **Week 3 Modules 1–5:** show the flow diagram, floorplan/power concepts, cell layout, timing/CTS and routing/DRC.
-5. **BabySoC lab:** show PLL → RVMYTH → DAC and matching pre/post-synthesis functional waveforms.
-6. **Assignment 1:** show the sequence detector and its verification evidence.
-7. **Assignment 2:** show PVT corners and WNS/TNS results; distinguish it from the routed Week 4 analysis.
-8. **Week 4 again:** show stage screenshots, routed database/SPEF inputs, corner table and the two graphs.
-9. **Close:** summarize what was learned and acknowledge the unresolved timing, unconstrained-pin and routing findings.
+The BabySoC lab and sequence-detector assignment apply simulation and synthesis concepts to concrete designs. The multi-corner STA assignment demonstrates how process, voltage, and temperature conditions influence timing results. Week 4 extends the analysis to a routed design using extracted parasitics and a 16-corner standard-cell Liberty sweep.
 
-The final video should demonstrate understanding, not claim that every physical sign-off condition was achieved.
+The recorded results include positive setup and hold slack at the typical corner, negative setup slack at six of the 16 analyzed corners, unconstrained pins, and 28 reported Metal 1 short violations. These findings limit any claim that the design is fully timing-clean or DRC-clean. They also demonstrate why timing constraints, library selection, parasitic data, implementation checkpoints, and physical-verification reports must be interpreted together.
+
+The principal outcome is an evidence-based understanding of the RTL-to-physical-design workflow and the distinctions between simulation success, synthesis completion, physical implementation, timing closure, and design-rule compliance.
