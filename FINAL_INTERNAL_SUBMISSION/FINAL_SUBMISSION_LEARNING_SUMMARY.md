@@ -336,7 +336,7 @@ The work involved both environment/debugging problems and technical limitations 
 14. **Documenting unresolved detailed-routing violations:** The recorded VSDBABYSOC detailed-route output contained 28 DRC violations described as Metal 1 shorts around the DAC-related area. No antenna net or pin violations were reported in the inspected output, but the repository does not show that the 28 shorts were fixed. Therefore, the layout cannot be claimed to be DRC-clean.
 15. **Keeping separate experiments and evidence distinct:** The GCD/Nangate45 stage-by-stage ORFS walkthrough, Assignment 2's synthesized-design STA, and Week 4's routed VSDBABYSOC STA were different analyses with different inputs and scopes. Keeping their metrics separate prevented misleading comparisons or claims that a final database proved GDSII generation or sign-off.
 
-## 16. Overall conclusion
+## 12. Overall conclusion
 
 The repository documents a progression from describing digital hardware in RTL to examining synthesized logic and understanding its physical implementation. Week 1 establishes the simulation and synthesis workflow. Week 2 shows how coding style, optimization, and gate-level verification affect the resulting logic. Week 3 develops the physical-design concepts required to understand floorplanning, cell layout, timing, clock distribution, routing, and physical verification.
 
