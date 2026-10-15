@@ -1,6 +1,6 @@
 # Week 4 – VSDBABYSOC: RTL-to-Layout Flow and Multi-Corner STA
 
-Weeks 1–3 covered RTL, synthesis, GLS and the concepts behind physical design. Week 4 puts those concepts to work: running the OpenROAD-flow-scripts (ORFS) flow in a GitHub Codespace, going through each implementation stage, and then doing post-route static timing analysis (STA) on VSDBABYSOC across 16 SKY130HD library corners. As before, this is a run-through of what I actually did in the lab and what I understood from it.
+Weeks 1–3 covered RTL, synthesis, GLS and the concepts behind physical design. Week 4 is ASSIGNMENT-2, W4 puts those concepts to work: running the OpenROAD-flow-scripts (ORFS) flow in a GitHub Codespace, going through each implementation stage, and then doing post-route static timing analysis (STA) on VSDBABYSOC across 16 SKY130HD library corners. As before, this is a run-through of what I actually did in the lab and what I understood from it.
 
 The flow, end to end:
 
