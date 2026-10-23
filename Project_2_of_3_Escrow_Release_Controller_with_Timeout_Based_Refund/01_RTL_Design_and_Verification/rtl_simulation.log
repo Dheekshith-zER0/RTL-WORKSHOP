@@ -1,0 +1,8 @@
+PASS: Reset
+PASS: Release authorized
+PASS: Refund authorized
+PASS: Release authorized
+PASS: Reset cancels active transaction
+--------------------------------
+ALL TESTS PASSED
+--------------------------------

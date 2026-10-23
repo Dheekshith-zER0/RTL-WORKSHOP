@@ -1,0 +1,70 @@
+2-of-3 ESCROW RELEASE CONTROLLER — ARCHITECTURE
+================================================
+
+PURPOSE
+-------
+A synchronous digital controller demonstrating a two-of-three approval
+rule and timeout-based refund authorization. It does not transfer funds.
+
+INPUTS
+------
+clk              System clock
+rst              Synchronous active-high reset
+start            Starts a transaction
+buyer_approve    Buyer approval
+seller_approve   Seller approval
+arbiter_approve  Arbiter approval
+
+OUTPUTS
+-------
+release_to_seller  Release authorization
+refund_to_buyer    Refund authorization
+busy               Transaction active
+done               Transaction reached a terminal state
+
+FINITE-STATE MACHINE
+--------------------
+IDLE
+  |
+  | start
+  v
+HOLDING
+  | \
+  |  \ timeout before majority
+  |   v
+  | REFUNDED
+  |
+  | any two approvals
+  v
+RELEASED
+
+The terminal states are RELEASED and REFUNDED. Reset returns the controller
+to IDLE. A new transaction can be started after a terminal state.
+
+APPROVAL LOGIC
+--------------
+Let B = buyer approval, S = seller approval, and A = arbiter approval.
+
+majority = (B & S) | (B & A) | (S & A)
+
+Approvals are latched while the transaction is in HOLDING. The majority
+decision includes approvals sampled on the current clock edge.
+
+TIMEOUT AND PRIORITY
+--------------------
+The timeout counter advances while the controller is in HOLDING.
+If timeout occurs before a majority is available, the controller selects
+REFUNDED. If the second approval and timeout boundary coincide, approval
+takes priority and the controller selects RELEASED.
+
+RESET AND PARAMETER
+-------------------
+The primary RTL uses synchronous active-high reset.
+TIMEOUT_CYCLES defaults to 16 in the primary RTL. The RTL testbench uses
+a smaller timeout to exercise timeout behavior more quickly.
+
+PHYSICAL IMPLEMENTATION
+-----------------------
+OpenLane run: runs/09-10_22-08
+Target standard-cell library: SKY130 HD
+Configured clock period: 10 ns

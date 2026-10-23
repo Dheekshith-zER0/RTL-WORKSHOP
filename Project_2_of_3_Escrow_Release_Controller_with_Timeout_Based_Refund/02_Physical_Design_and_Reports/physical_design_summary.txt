@@ -1,0 +1,37 @@
+2-of-3 Escrow Release Controller
+Physical Design Evidence Summary
+
+Platform:
+OpenLane flow
+SKY130 HD standard-cell library
+
+Recorded run:
+runs/09-10_22-08/
+
+Synthesis:
+67 standard cells reported by Yosys.
+
+Detailed routing:
+Final reported violation count: 0
+Total routed wire length: 1804 um
+Total vias: 535
+
+Antenna report:
+Pins violated: 0
+Nets violated: 0
+
+Magic DRC:
+Reported COUNT: 0
+
+RTL simulation:
+ALL TESTS PASSED
+
+Timing:
+OpenLane timing reports and supplementary STA output
+are included. Supplementary STA results are not
+presented as official OpenLane signoff metrics.
+
+Verification limitation:
+Gate-level simulation remains unverified.
+Exhaustive process-voltage-temperature corner coverage
+has not been established from the available reports.
