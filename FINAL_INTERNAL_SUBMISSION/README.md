@@ -1,4 +1,4 @@
-**Final submission video:** [Watch the video on Google Drive](https://drive.google.com/drive/folders/1Y9_OjmntVFXjxyiN2xsD9NBpqz0fFaLj?usp=drive_link)
+**Internal submission folder:** [Open the submission folder on Google Drive](https://drive.google.com/drive/folders/1Y9_OjmntVFXjxyiN2xsD9NBpqz0fFaLj?usp=drive_link)
 
 # RTL Design and Physical Design Workshop — Final Technical Report
 
