@@ -6,7 +6,7 @@
 **Configured clock:** 10 ns (100 MHz target)  
 **Status:** RTL simulation passed; physical-design run completed; limitations are documented below.
 
-> **Demo video:** [Watch the project demonstration on Google Drive](PASTE_GOOGLE_DRIVE_LINK_HERE)
+> **Demo video:** Google Drive link will be added after recording and upload.
 
 ## Abstract
 
@@ -20,6 +20,36 @@ The work covers RTL design, testbench-based functional simulation, synthesis, an
 |---|---|
 | [`01_RTL_Design_and_Verification/`](./01_RTL_Design_and_Verification/) | Synthesizable RTL, testbench, simulation script/log, architecture notes and synthesis statistics |
 | [`02_Physical_Design_and_Reports/`](./02_Physical_Design_and_Reports/) | OpenLane configuration, synthesized netlist, GDS/layout views, floorplan/placement/CTS/routing evidence, timing/DRC/LVS/antenna reports and routed artifacts |
+
+## Quick start: RTL simulation
+
+Requirements: Linux or a compatible development environment with Icarus Verilog installed.
+
+From the project root, run:
+
+```bash
+cd 01_RTL_Design_and_Verification
+chmod +x sim.sh
+./sim.sh
+```
+
+The testbench checks reset behavior, release after two-of-three approvals, timeout-based refund, approval priority at the timeout boundary, and reset cancellation of an active transaction. The archived run reports **ALL TESTS PASSED** for those scenarios; this is not a formal proof of all possible input sequences.
+
+## Results at a glance
+
+### Floorplan
+
+![Floorplan-stage view](./02_Physical_Design_and_Reports/04_floorplan.png)
+
+### Placement
+
+![Placement-stage view](./02_Physical_Design_and_Reports/05_placement.png)
+
+### Final layout visualization
+
+![Final layout visualization](./02_Physical_Design_and_Reports/09_gds_visualization.png)
+
+These images are visual evidence from the recorded implementation run. They complement, but do not replace, the underlying GDSII file and physical-verification reports.
 
 ## 1. Problem statement
 
@@ -69,13 +99,6 @@ where `B`, `S`, and `A` are the retained buyer, seller, and arbiter approvals. A
 
 ## 4. Functional verification
 
-Run from this folder in an environment with Icarus Verilog installed:
-
-```bash
-chmod +x sim.sh
-./sim.sh
-```
-
 The archived simulation log records these passing checks:
 
 - Reset behavior.
@@ -111,19 +134,19 @@ The available OpenLane reports include post-CTS setup slack of +4.85 ns and Fast
 
 ### RTL and simulation
 
-- `01_RTL_Design_and_Verification/escrow_release_controller.v` — synthesizable FSM RTL.
-- `01_RTL_Design_and_Verification/tb_escrow_release_controller.v` — functional testbench.
-- `01_RTL_Design_and_Verification/rtl_simulation.log` — recorded simulation output.
-- `01_RTL_Design_and_Verification/synthesis_statistics.rpt` — Yosys cell statistics.
+- [`escrow_release_controller.v`](./01_RTL_Design_and_Verification/escrow_release_controller.v) — synthesizable FSM RTL.
+- [`tb_escrow_release_controller.v`](./01_RTL_Design_and_Verification/tb_escrow_release_controller.v) — functional testbench.
+- [`rtl_simulation.log`](./01_RTL_Design_and_Verification/rtl_simulation.log) — recorded simulation output.
+- [`synthesis_statistics.rpt`](./01_RTL_Design_and_Verification/synthesis_statistics.rpt) — Yosys cell statistics.
 
 ### Physical design
 
-- `02_Physical_Design_and_Reports/04_floorplan.png` — floorplan-stage view.
-- `02_Physical_Design_and_Reports/05_placement.png` — placement-stage view.
-- `02_Physical_Design_and_Reports/06_cts.png` — clock-tree-synthesis view.
-- `02_Physical_Design_and_Reports/08_routing.png` — routing-stage view.
-- `02_Physical_Design_and_Reports/09_gds_visualization.png` and `10_magic_layout_visualization.png` — generated layout visualizations.
-- `06_initial_layout_view.png` and `07_final_layout_view.png` — captured layout-view screenshots.
+- [Floorplan](./02_Physical_Design_and_Reports/04_floorplan.png) — floorplan-stage view.
+- [Placement](./02_Physical_Design_and_Reports/05_placement.png) — placement-stage view.
+- [Clock-tree synthesis](./02_Physical_Design_and_Reports/06_cts.png) — CTS-stage view.
+- [Routing](./02_Physical_Design_and_Reports/08_routing.png) — routing-stage view.
+- [GDS visualization](./02_Physical_Design_and_Reports/09_gds_visualization.png) and [Magic layout visualization](./02_Physical_Design_and_Reports/10_magic_layout_visualization.png) — generated layout visualizations.
+- [Initial layout screenshot](./02_Physical_Design_and_Reports/06_initial_layout_view.png) and [final layout screenshot](./02_Physical_Design_and_Reports/07_final_layout_view.png) — captured layout-view screenshots.
 - `routing_completion.log`, `magic_drc_report.txt`, `antenna_report.rpt`, and `implementation_artifacts/logs/lvs/38-lvs.lef.log` — physical-verification evidence.
 - `implementation_artifacts/results/routing/` — routed DEF and SPEF artifacts where included.
 - `implementation_artifacts/results/magic/` and `.../klayout/` — GDS stream outputs.
@@ -164,7 +187,7 @@ The available OpenLane reports include post-CTS setup slack of +4.85 ns and Fast
 - **Student:** MOLUGU DHEEKSHITH
 - **Roll number:** 24EG104A57
 - **Guide:** To be added after confirmation
-- **Demonstration video:** `PASTE_GOOGLE_DRIVE_LINK_HERE`
+- **Demonstration video:** To be added after recording and upload.
 
 ## Conclusion
 
