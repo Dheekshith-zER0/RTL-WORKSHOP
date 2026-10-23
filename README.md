@@ -2,8 +2,8 @@
 
 > **Final project submission — video links**
 >
+> - **Internal Submission Video:** [Click here to watch](https://drive.google.com/file/d/1m7nVfDJPEhI3tJ1B-1kgDrhY3-lQG6Eo/view?usp=drive_link)
 > - **Project Submission Video:** [Click here to watch](https://drive.google.com/file/d/1lTyBPYFNMrefYQZbERJziFjJBmFp8p6A/view?usp=drive_link)
-> - **Internal Submission Video:** *Link to be added*
 >
 > **Final project:** [2-of-3 Escrow Release Controller with Timeout-Based Refund](./Project_2_of_3_Escrow_Release_Controller_with_Timeout_Based_Refund/)
 
