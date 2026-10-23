@@ -6,8 +6,14 @@
 > - **Project Submission Video:** [Click here to watch](https://drive.google.com/file/d/1lTyBPYFNMrefYQZbERJziFjJBmFp8p6A/view?usp=drive_link)
 >
 > **Final project:** [2-of-3 Escrow Release Controller with Timeout-Based Refund](./Project_2_of_3_Escrow_Release_Controller_with_Timeout_Based_Refund/)
+> - **Internal submission files:** [Open `FINAL_INTERNAL_SUBMISSION`](./FINAL_INTERNAL_SUBMISSION/)
 
 This repository documents RTL design, simulation, synthesis, and physical-design work completed during the VSD RTL Design and Synthesis Workshop. The final submission project is linked above; the remaining folders contain supporting workshop labs, assignments, and learning evidence.
+
+## Submission Directories
+
+- [**Final internal submission →**](./FINAL_INTERNAL_SUBMISSION/) — internal report and supporting submission material.
+- [**Final project →**](./Project_2_of_3_Escrow_Release_Controller_with_Timeout_Based_Refund/) — escrow controller RTL, verification, and physical-design results.
 
 ## Final Project
 
