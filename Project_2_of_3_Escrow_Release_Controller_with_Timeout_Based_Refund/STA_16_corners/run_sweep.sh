@@ -1,62 +1,105 @@
 #!/usr/bin/env bash
 set -euo pipefail
-HERE="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-OPENSTA="${OPENSTA:-sta}"; LIB_DIR="${LIB_DIR:-}"
-STA_NETLIST="${STA_NETLIST:-}"; STA_SDC="${STA_SDC:-}"; STA_SPEF="${STA_SPEF:-}"
-STA_DESIGN="${STA_DESIGN:-escrow_release_controller}"; MACRO_LIBS="${MACRO_LIBS:-}"
-OUT_DIR="${OUT_DIR:-$HERE/logs}"; SUMMARY="$HERE/summary.csv"
-die(){ echo "ERROR: $*" >&2; exit 2; }
-command -v "$OPENSTA" >/dev/null 2>&1 || die "OpenSTA executable '$OPENSTA' not found."
-[[ -n "$LIB_DIR" && -d "$LIB_DIR" ]] || die "Set LIB_DIR to the directory containing the 16 Liberty models."
-for v in STA_NETLIST STA_SDC STA_SPEF; do [[ -n "${!v}" && -r "${!v}" ]] || die "Set $v to a readable file; see README.md."; done
-mkdir -p "$OUT_DIR"
-mapfile -t LIBS < <(find "$LIB_DIR" -maxdepth 1 -type f -name 'sky130_fd_sc_hd__*.lib' ! -iname '*ccsnoise*' -print | sort)
-[[ "${#LIBS[@]}" -eq 16 ]] || die "Expected 16 non-CCS-noise standard-cell Liberty models in $LIB_DIR; found ${#LIBS[@]}."
-TMP="$OUT_DIR/.run_corner.tcl"
-printf 'corner,setup_worst_slack_ns,setup_tns_ns,hold_worst_slack_ns,status\n' > "$SUMMARY"
-for lib in "${LIBS[@]}"; do
-  corner="$(basename "$lib" .lib)"; log="$OUT_DIR/$corner.log"
-  export CORNER_LIB="$lib" STA_NETLIST STA_SDC STA_SPEF STA_DESIGN MACRO_LIBS
-  python3 - "$TMP" <<'PY'
-import os,sys
-def q(s):
-    if any(c in s for c in "{}"): raise SystemExit("Path contains braces unsupported by Tcl quoting: "+s)
-    return "{"+s+"}"
-lines=["read_liberty "+q(os.environ["CORNER_LIB"])]
-for p in filter(None,os.environ.get("MACRO_LIBS","").split(":")): lines.append("read_liberty "+q(p))
-lines += ["read_verilog "+q(os.environ["STA_NETLIST"]),
-"link_design "+q(os.environ["STA_DESIGN"]),
-"read_sdc "+q(os.environ["STA_SDC"]),
-"read_spef "+q(os.environ["STA_SPEF"]),
-"set_propagated_clock [all_clocks]",
-'puts "### SETUP_WNS ###"',"report_worst_slack -max",
-'puts "### SETUP_TNS ###"',"report_tns -max",
-'puts "### HOLD_WORST_SLACK ###"',"report_worst_slack -min",
-'puts "### CONSTRAINT_CHECK_BEGIN ###"',"check_setup -verbose",
-'puts "### CONSTRAINT_CHECK_END ###"',"exit"]
-open(sys.argv[1],"w").write("\n".join(lines)+"\n")
-PY
-  echo "Running $corner ..."
-  if ! "$OPENSTA" -exit "$TMP" > "$log" 2>&1; then echo "OpenSTA failed for $corner; inspect $log" >&2; exit 1; fi
-  python3 - "$log" "$corner" "$SUMMARY" <<'PY'
-import re,sys,csv
-log,corner,out=sys.argv[1:]; text=open(log,errors="replace").read()
-def sect(name,next_name):
-    start=text.find("### "+name+" ###")
-    if start<0: raise SystemExit(f"{corner}: missing report marker {name}; inspect {log}")
-    start+=len("### "+name+" ###"); end=text.find("### "+next_name+" ###",start)
-    return text[start:end if end>=0 else len(text)]
-def get(name,next_name,label):
-    s=sect(name,next_name)
-    m=re.search(r"(?im)^\s*"+re.escape(label)+r"\s*[:=]?\s*(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\s*$",s)
-    if not m: m=re.search(r"(?i)\b"+re.escape(label)+r"\b\s+(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)",s)
-    if not m: raise SystemExit(f"{corner}: could not parse {label} in {name}; inspect {log}. No value fabricated.")
-    return float(m.group(1))
-wns=get("SETUP_WNS","SETUP_TNS","worst slack")
-tns=get("SETUP_TNS","HOLD_WORST_SLACK","tns")
-hold=get("HOLD_WORST_SLACK","CONSTRAINT_CHECK_BEGIN","worst slack")
-with open(out,"a",newline="") as f: csv.writer(f).writerow([corner,f"{wns:.4f}",f"{tns:.4f}",f"{hold:.4f}","REVIEW"])
-PY
+
+# Run from the project root in the configured Linux VM.
+
+PDK_ROOT="${PDK_ROOT:-/home/vsduser/Desktop/work/tools/openlane_working_dir/pdks}"
+LIBDIR="$PDK_ROOT/sky130A/libs.ref/sky130_fd_sc_hd/lib"
+
+NETLIST="runs/09-10_22-08/results/synthesis/escrow_release_controller.synthesis_cts.v"
+SPEF="runs/09-10_22-08/results/routing/escrow_release_controller.spef"
+
+OUT="reports/sta_16_corners"
+SUBMISSION="submission/sta_16_corners"
+SUMMARY="$OUT/summary.csv"
+TMP_SUMMARY="$OUT/summary_tns.tmp.csv"
+
+mkdir -p "$OUT" "$SUBMISSION"
+
+[[ -f "$NETLIST" ]] || { echo "ERROR: Netlist not found: $NETLIST"; exit 1; }
+[[ -f "$SPEF" ]] || { echo "ERROR: SPEF not found: $SPEF"; exit 1; }
+[[ -d "$LIBDIR" ]] || { echo "ERROR: Liberty directory not found: $LIBDIR"; exit 1; }
+[[ -x /usr/bin/sta ]] || { echo "ERROR: /usr/bin/sta is not executable."; exit 1; }
+
+mapfile -t LIBS < <(
+find "$LIBDIR" -maxdepth 1 -type f -name 'sky130_fd_sc_hd__*.lib' 
+! -iname '*ccsnoise*' | sort
+)
+
+if [[ "${#LIBS[@]}" -ne 16 ]]; then
+echo "ERROR: Expected 16 Liberty files; found ${#LIBS[@]}."
+exit 1
+fi
+
+# Keep the previous summary intact until all 16 runs succeed.
+
+printf 'corner,setup_worst_slack_ns,setup_tns_ns,hold_worst_slack_ns,status\n' > "$TMP_SUMMARY"
+
+for LIB in "${LIBS[@]}"; do
+NAME="$(basename "$LIB" .lib)"
+LOG="$OUT/${NAME}_tns.log"
+TCL="$OUT/${NAME}_tns.tcl"
+
+```
+cat > "$TCL" <<TCL_EOF
+```
+
+read_liberty $LIB
+read_verilog $NETLIST
+link_design escrow_release_controller
+
+create_clock -name clk -period 10.0 [get_ports clk]
+set_input_delay 2.0 -clock clk [get_ports {rst start buyer_approve seller_approve arbiter_approve}]
+set_output_delay 2.0 -clock clk [get_ports {release_to_seller refund_to_buyer busy done}]
+
+read_spef $SPEF
+set_propagated_clock [all_clocks]
+
+puts "RESULT_SETUP_WNS_BEGIN"
+report_worst_slack -max
+puts "RESULT_SETUP_TNS_BEGIN"
+report_tns
+puts "RESULT_HOLD_WNS_BEGIN"
+report_worst_slack -min
+exit
+TCL_EOF
+
+```
+echo "Running $NAME ..."
+
+if /usr/bin/sta -no_splash -exit "$TCL" > "$LOG" 2>&1; then
+    SETUP="$(awk '/RESULT_SETUP_WNS_BEGIN/{s=1;next}/RESULT_SETUP_TNS_BEGIN/{s=0}s&&/^worst slack /{print $3;exit}' "$LOG")"
+    TNS="$(awk '/RESULT_SETUP_TNS_BEGIN/{s=1;next}/RESULT_HOLD_WNS_BEGIN/{s=0}s&&/^tns /{print $2;exit}' "$LOG")"
+    HOLD="$(awk '/RESULT_HOLD_WNS_BEGIN/{s=1;next}s&&/^worst slack /{print $3;exit}' "$LOG")"
+
+    if [[ -n "$SETUP" && -n "$TNS" && -n "$HOLD" ]]; then
+        printf '%s,%s,%s,%s,REVIEW\n' "$NAME" "$SETUP" "$TNS" "$HOLD" >> "$TMP_SUMMARY"
+        echo "  WNS=$SETUP ns | TNS=$TNS ns | Hold=$HOLD ns"
+    else
+        echo "ERROR: Could not parse metrics for $NAME; see $LOG"
+        exit 1
+    fi
+else
+    echo "ERROR: OpenSTA failed for $NAME; see $LOG"
+    exit 1
+fi
+```
+
 done
-python3 "$HERE/generate_report.py" --csv "$SUMMARY" --out-dir "$HERE"
-echo "Complete: $SUMMARY ; inspect logs in $OUT_DIR and regenerated DOCX/graphs before submission."
+
+if [[ "$(wc -l < "$TMP_SUMMARY")" -ne 17 ]]; then
+echo "ERROR: Expected 16 valid corner rows."
+exit 1
+fi
+
+if grep -Eq ',NA,|,PARSE_ERROR$|,STA_ERROR$' "$TMP_SUMMARY"; then
+echo "ERROR: Invalid metrics detected; previous summary preserved."
+exit 1
+fi
+
+mv "$TMP_SUMMARY" "$SUMMARY"
+cp "$SUMMARY" "$SUBMISSION/summary.csv"
+
+echo "SUCCESS: All 16 corners produced WNS, TNS, and hold slack."
+echo "Updated: $SUMMARY"
+echo "Updated: $SUBMISSION/summary.csv"

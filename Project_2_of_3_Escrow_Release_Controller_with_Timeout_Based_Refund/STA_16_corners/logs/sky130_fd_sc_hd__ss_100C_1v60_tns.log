@@ -1,0 +1,18 @@
+Compact STA log for sky130_fd_sc_hd__ss_100C_1v60_tns
+Original warning lines counted: 3
+Original error lines counted: 0
+
+Selected diagnostics (unique):
+Warning: /home/vsduser/Desktop/work/tools/openlane_working_dir/pdks/sky130A/libs.ref/sky130_fd_sc_hd/lib/sky130_fd_sc_hd__ss_100C_1v60.lib line 24, default_fanout_load is 0.0.
+Warning: runs/09-10_22-08/results/synthesis/escrow_release_controller.synthesis_cts.v line 290, module sky130_fd_sc_hd__tapvpwrvgnd_1 not found. Creating black box for PHY_28.
+
+Measured report markers and results:
+RESULT_SETUP_WNS_BEGIN
+worst slack 5.29
+RESULT_SETUP_TNS_BEGIN
+tns 0.00
+RESULT_HOLD_WNS_BEGIN
+worst slack 0.99
+
+Note: This compact log summarizes the supplied run output. The original full logs were not modified in the VM.
+Run run_sweep.sh to regenerate complete logs in the configured OpenSTA environment.

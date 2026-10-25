@@ -1,2 +1,0 @@
-metric,status,reason
-TNS (total negative slack),NOT CAPTURED,"Supplied summary and shown per-corner logs do not report TNS. Rerun STA with a TNS reporting command."
